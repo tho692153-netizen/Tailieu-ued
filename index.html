@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chợ tài liệu sinh viên UED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#f6f7f4;--cd:#fff;--tx:#1d2b25;--mu:#66736d;--ac:#0f766e;--a2:#e3f2ef;--bd:#dde3df}
+@media(prefers-color-scheme:dark){:root{--bg:#121816;--cd:#1c2521;--tx:#e8efeb;--mu:#93a39b;--ac:#4fd1c0;--a2:#1d3a35;--bd:#2c3a34}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:16px}h1{font-size:22px;margin:6px 0}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--cd);color:var(--tx);font:inherit;margin-bottom:8px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:10px}
+.c h3{margin:0 0 4px;font-size:17px}.mu{color:var(--mu);font-size:14px}
+.t{display:inline-block;background:var(--a2);color:var(--ac);font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;margin-right:4px}
+button{border:0;background:var(--ac);color:#fff;padding:10px 14px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+button.s{background:var(--a2);color:var(--ac)}.ct{margin-top:8px;padding:10px;background:var(--a2);border-radius:10px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+a{color:var(--ac)}label{font-size:13px;font-weight:600;display:block;margin:4px 0}
+</style></head><body><div class="w">
+<div class="bar"><h1>📚 Chợ tài liệu sinh viên UED</h1><div id="auth"></div></div>
+<p class="mu">Ai cũng xem được danh sách. Muốn nhận tài liệu đầy đủ, hãy liên hệ chủ tài liệu.</p>
+<div id="login" class="c" hidden>
+  <label>Email trường (@ued.udn.vn) để đăng tài liệu</label>
+  <input id="em" type="email" placeholder="ten@ued.udn.vn">
+  <button id="sendl">Gửi link đăng nhập</button> <button class="s" id="x1">Đóng</button>
+  <div id="lm" class="mu"></div></div>
+<div id="post" class="c" hidden><b>Chia sẻ tài liệu</b>
+  <div class="g"><input id="n" placeholder="Họ tên"><input id="cl" placeholder="Lớp"></div>
+  <div class="g"><input id="sc" placeholder="Trường / Khoa"><select id="y"><option>Năm 2</option><option>Năm 3</option><option>Năm 4</option></select></div>
+  <input id="co" placeholder="Môn học"><input id="ti" placeholder="Tên tài liệu">
+  <select id="ty"><option>Slide</option><option>Giáo trình</option><option>Đề thi</option><option>Bài giảng / ghi chú</option><option>Khác</option></select>
+  <textarea id="de" rows="2" placeholder="Mô tả ngắn"></textarea>
+  <input id="ct" placeholder="Cách liên hệ (Zalo / email)">
+  <label>Bản xem thử (PDF hoặc ảnh, tối đa 10 MB, không bắt buộc)</label>
+  <input id="fl" type="file" accept=".pdf,image/*">
+  <button id="go">Đăng</button> <button class="s" id="x2">Đóng</button></div>
+<input id="q" placeholder="Tìm theo môn, tên tài liệu, họ tên…">
+<div class="g"><select id="fy"><option value="">Mọi năm học</option><option>Năm 2</option><option>Năm 3</option><option>Năm 4</option></select>
+<select id="ft"><option value="">Mọi loại</option><option>Slide</option><option>Giáo trình</option><option>Đề thi</option><option>Bài giảng / ghi chú</option><option>Khác</option></select></div>
+<div id="list"></div></div>
+<script>
+// ====== ĐIỀN 2 DÒNG NÀY SAU KHI TẠO PROJECT SUPABASE ======
+var URL_="https://nydahvamytqicwqiaiax.supabase.co", KEY="sb_publishable_0EMH3CABWNH1hknQQPh9UA_5-bgUymi", DOMAIN="@ued.udn.vn";
+var sb=supabase.createClient(URL_,KEY),me=null,docs=[],open={};
+var $=function(i){return document.getElementById(i)};
+function e(t){var d=document.createElement("div");d.textContent=t==null?"":t;return d.innerHTML}
+function bar(){ $("auth").innerHTML=me?'<span class="mu">'+e(me.email)+'</span> <button class="s" id="out">Thoát</button> <button id="np">+ Đăng</button>':'<button id="in">Đăng nhập để đăng bài</button>';
+ if(me){$("out").onclick=function(){sb.auth.signOut()};$("np").onclick=function(){$("post").hidden=false;scrollTo(0,0)}}
+ else $("in").onclick=function(){$("login").hidden=false}}
+sb.auth.onAuthStateChange(function(_,s){me=s?s.user:null;bar();render()});
+sb.auth.getSession().then(function(r){me=r.data.session?r.data.session.user:null;bar()});
+$("x1").onclick=function(){$("login").hidden=true};$("x2").onclick=function(){$("post").hidden=true};
+$("sendl").onclick=async function(){var m=$("em").value.trim().toLowerCase();
+ if(!m.endsWith(DOMAIN)){$("lm").textContent="Chỉ nhận email "+DOMAIN;return}
+ var r=await sb.auth.signInWithOtp({email:m,options:{emailRedirectTo:location.href.split("#")[0]}});
+ $("lm").textContent=r.error?"Lỗi: "+r.error.message:"Đã gửi! Mở email và bấm vào link."};
+async function load(){var r=await sb.from("documents").select("*").order("created_at",{ascending:false});
+ if(r.error){$("list").innerHTML='<div class="c">Chưa kết nối được dữ liệu: '+e(r.error.message)+'</div>';return}
+ docs=r.data;render()}
+function render(){var q=$("q").value.toLowerCase(),y=$("fy").value,t=$("ft").value;
+ var it=docs.filter(function(d){var s=(d.title+d.course+d.full_name+(d.description||"")).toLowerCase();
+  return(!q||s.indexOf(q)>-1)&&(!y||d.year===y)&&(!t||d.doc_type===t)});
+ $("list").innerHTML=it.length?it.map(function(d){return'<div class="c"><h3>'+e(d.title)+'</h3><span class="t">'+e(d.course)+'</span><span class="t">'+e(d.doc_type)+'</span><span class="t">'+e(d.year)+'</span>'
+  +'<div class="mu" style="margin:6px 0">'+e(d.description)+'</div><div class="mu">👤 '+e(d.full_name)+' · '+e(d.class_name)+' · '+e(d.school)+'</div>'
+  +(d.preview_url?'<div style="margin-top:6px"><a href="'+e(d.preview_url)+'" target="_blank" rel="noopener">👁 Xem thử: '+e(d.preview_name)+'</a></div>':'')
+  +(open[d.id]?'<div class="ct">Liên hệ chủ tài liệu: <b>'+e(d.contact)+'</b></div>':'<button class="s" style="margin-top:8px" data-c="'+d.id+'">Liên hệ để nhận tài liệu đầy đủ</button>')
+  +'<div style="margin-top:8px" class="mu"><a href="#" data-r="'+d.id+'">Báo cáo</a>'+(me&&me.id===d.user_id?' · <a href="#" data-d="'+d.id+'">Xoá bài của tôi</a>':'')+'</div></div>'}).join(""):'<div class="mu" style="text-align:center;padding:30px">Chưa có tài liệu phù hợp.</div>'}
+$("list").onclick=async function(ev){var b=ev.target.closest("[data-c],[data-r],[data-d]");if(!b)return;ev.preventDefault();
+ if(b.dataset.c){open[b.dataset.c]=1;render()}
+ else if(b.dataset.r){var why=prompt("Lý do báo cáo (vi phạm bản quyền, sai nội dung…)?");if(why){await sb.from("reports").insert({doc_id:b.dataset.r,reason:why});alert("Cảm ơn bạn, quản trị viên sẽ xem xét.")}}
+ else if(b.dataset.d&&confirm("Xoá bài đăng này?")){await sb.from("documents").delete().eq("id",b.dataset.d);load()}};
+["q","fy","ft"].forEach(function(i){$(i).oninput=render});
+$("go").onclick=async function(){var g=function(i){return $(i).value.trim()};
+ if(!g("n")||!g("sc")||!g("co")||!g("ti")||!g("ct")){alert("Điền đủ họ tên, trường, môn học, tên tài liệu và cách liên hệ.");return}
+ $("go").disabled=true;var row={full_name:g("n"),class_name:g("cl"),school:g("sc"),year:$("y").value,course:g("co"),title:g("ti"),doc_type:$("ty").value,description:g("de"),contact:g("ct")};
+ try{var f=$("fl").files[0];
+  if(f){if(f.size>10485760)throw Error("File quá 10 MB");var p=me.id+"/"+Date.now()+"-"+f.name.replace(/[^\w.\-]/g,"_");
+   var u=await sb.storage.from("previews").upload(p,f);if(u.error)throw u.error;
+   row.preview_url=sb.storage.from("previews").getPublicUrl(p).data.publicUrl;row.preview_name=f.name}
+  var r=await sb.from("documents").insert(row);if(r.error)throw r.error;
+  $("post").hidden=true;["n","cl","sc","co","ti","de","ct"].forEach(function(i){$(i).value=""});$("fl").value="";load()
+ }catch(x){alert("Không đăng được: "+x.message)}$("go").disabled=false};
+load();
+</script></body></html>
